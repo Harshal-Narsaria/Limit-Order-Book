@@ -34,3 +34,11 @@ add_library(lob
 )
 target_include_directories(lob PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 lob_warnings(lob)
+
+# --- Tests -------------------------------------------------------------------
+enable_testing()
+
+add_executable(order_book_tests tests/order_book_tests.cpp)
+target_link_libraries(order_book_tests PRIVATE lob)
+lob_warnings(order_book_tests)
+add_test(NAME order_book_tests COMMAND order_book_tests)
