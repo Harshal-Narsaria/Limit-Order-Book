@@ -46,6 +46,7 @@ concept OrderBook = requires(Book book, const Book cbook, OrderId id, Side side,
     { cbook.best_ask() } -> std::same_as<std::optional<Price>>;
     { cbook.volume_at(side, price) } -> std::same_as<Quantity>;
     { cbook.order_count() } -> std::same_as<std::size_t>;
+    { cbook.contains(id) } -> std::same_as<bool>;
     { cbook.snapshot() } -> std::same_as<BookSnapshot>;
 };
 

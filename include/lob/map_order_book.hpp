@@ -33,6 +33,7 @@ public:
     std::optional<Price> best_ask() const;
     Quantity volume_at(Side side, Price price) const;
     std::size_t order_count() const { return orders_.size(); }
+    bool contains(OrderId id) const { return orders_.contains(id); }
     BookSnapshot snapshot() const;
 
 private:

@@ -32,6 +32,7 @@ endfunction()
 add_library(lob
     src/map_order_book.cpp
     src/flat_order_book.cpp
+    src/message_generator.cpp
 )
 target_include_directories(lob PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 lob_warnings(lob)
@@ -43,3 +44,8 @@ add_executable(order_book_tests tests/order_book_tests.cpp)
 target_link_libraries(order_book_tests PRIVATE lob)
 lob_warnings(order_book_tests)
 add_test(NAME order_book_tests COMMAND order_book_tests)
+
+add_executable(differential_test tests/differential_test.cpp)
+target_link_libraries(differential_test PRIVATE lob)
+lob_warnings(differential_test)
+add_test(NAME differential_test COMMAND differential_test)
