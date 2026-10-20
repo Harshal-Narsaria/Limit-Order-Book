@@ -31,6 +31,7 @@ endfunction()
 # --- Library -----------------------------------------------------------------
 add_library(lob
     src/map_order_book.cpp
+    src/flat_order_book.cpp
 )
 target_include_directories(lob PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 lob_warnings(lob)

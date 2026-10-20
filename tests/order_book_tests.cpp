@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+#include "lob/flat_order_book.hpp"
 #include "lob/map_order_book.hpp"
 #include "lob/order_book.hpp"
 #include "test_framework.hpp"
@@ -17,10 +18,12 @@ using lob::Side;
 using lob::Trade;
 
 static_assert(lob::OrderBook<lob::MapOrderBook>);
+static_assert(lob::OrderBook<lob::FlatOrderBook>);
 
 template <typename Test>
 bool register_book_test(const std::string& name) {
     testing::add_test(name + " [map]", &Test::template run<lob::MapOrderBook>);
+    testing::add_test(name + " [flat]", &Test::template run<lob::FlatOrderBook>);
     return true;
 }
 
@@ -373,6 +376,57 @@ BOOK_TEST(trades_are_appended_not_overwritten) {
     book.add_limit(1, Side::Sell, 100, 5, trades);
     book.add_limit(2, Side::Buy, 100, 5, trades);
     CHECK_EQ(trades.size(), 2u);
+}
+
+BOOK_TEST(best_price_moves_across_gaps_when_level_empties) {
+    Book book;
+    std::vector<Trade> trades;
+    book.add_limit(1, Side::Buy, 100, 5, trades);
+    book.add_limit(2, Side::Buy, 90, 5, trades);
+    book.add_limit(3, Side::Sell, 110, 5, trades);
+    book.add_limit(4, Side::Sell, 125, 5, trades);
+
+    book.cancel(1);
+    CHECK_EQ(book.best_bid(), std::optional<lob::Price>{90});
+    book.add_market(5, Side::Buy, 5, trades);
+    CHECK_EQ(book.best_ask(), std::optional<lob::Price>{125});
+    book.cancel(2);
+    book.cancel(4);
+    CHECK(!book.best_bid().has_value());
+    CHECK(!book.best_ask().has_value());
+}
+
+// --- Limits specific to the flat book --------------------------------------------
+
+TEST_CASE("flat: prices outside the configured range are rejected") {
+    lob::FlatOrderBook book({.min_price = 100, .max_price = 200, .max_orders = 16, .max_order_id = 64});
+    std::vector<Trade> trades;
+    CHECK(!book.add_limit(1, Side::Buy, 99, 5, trades));
+    CHECK(!book.add_limit(1, Side::Sell, 201, 5, trades));
+    CHECK(book.add_limit(1, Side::Buy, 100, 5, trades));
+    CHECK(book.add_limit(2, Side::Sell, 200, 5, trades));
+    CHECK(!book.modify(1, 50, 5, trades));  // rejected modify leaves the order untouched
+    CHECK_EQ(book.volume_at(Side::Buy, 100), 5);
+    CHECK_EQ(book.volume_at(Side::Buy, 5000), 0);
+}
+
+TEST_CASE("flat: order ids beyond capacity are rejected") {
+    lob::FlatOrderBook book({.min_price = 0, .max_price = 200, .max_orders = 16, .max_order_id = 64});
+    std::vector<Trade> trades;
+    CHECK(!book.add_limit(64, Side::Buy, 100, 5, trades));
+    CHECK(!book.cancel(1'000'000));
+    CHECK(book.add_limit(63, Side::Buy, 100, 5, trades));
+}
+
+TEST_CASE("flat: pool exhaustion rejects new orders, cancels free slots") {
+    lob::FlatOrderBook book({.min_price = 0, .max_price = 200, .max_orders = 2, .max_order_id = 64});
+    std::vector<Trade> trades;
+    CHECK(book.add_limit(1, Side::Buy, 100, 5, trades));
+    CHECK(book.add_limit(2, Side::Buy, 101, 5, trades));
+    CHECK(!book.add_limit(3, Side::Buy, 102, 5, trades));
+    CHECK(book.cancel(1));
+    CHECK(book.add_limit(3, Side::Buy, 102, 5, trades));
+    CHECK_EQ(book.order_count(), 2u);
 }
 
 int main() { return testing::run_all(); }
