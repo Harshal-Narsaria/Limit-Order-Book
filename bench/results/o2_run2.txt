@@ -1,0 +1,20 @@
+﻿Generating 5000000 messages (seed 42: 60% add, 30% cancel, 10% aggressive)...
+Compiler: 13.1.0, flags: -O2 -DNDEBUG
+Pinned to CPU 2. Timer: 2.611 ticks/ns, empty timer pair ~52.1 ns (included in latency figures)
+Warm-up 500000 messages, measured 4500000, throughput = median of 5 runs
+Both implementations produced 1860290 trades in the measured window; 1899 orders resting at the end.
+
+implementation         throughput      mean      p50      p99     p99.9        max
+                        (M msg/s)      (ns)     (ns)     (ns)      (ns)       (ns)
+map (baseline)               2.84     383.7      342     1176      1916    1323945
+flat (optimised)            14.14     140.1      119      434       664      64102
+speedup                     4.98x     2.74x    2.88x    2.71x     2.88x
+
+Latency by message outcome (ns):
+implementation     outcome                    share     mean      p50      p99     p99.9
+map (baseline)     add (rests, no fill)       55.2%    395.9      377      751      1136
+map (baseline)     cancel                     30.0%    299.0      277      603      1055
+map (baseline)     order that traded          14.8%    509.1      391     1687      2366
+flat (optimised)   add (rests, no fill)       55.2%    114.2      108      176       362
+flat (optimised)   cancel                     30.0%    152.3      124      500       827
+flat (optimised)   order that traded          14.8%    211.9      187      479       656

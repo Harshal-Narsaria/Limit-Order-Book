@@ -49,3 +49,9 @@ add_executable(differential_test tests/differential_test.cpp)
 target_link_libraries(differential_test PRIVATE lob)
 lob_warnings(differential_test)
 add_test(NAME differential_test COMMAND differential_test)
+
+# --- Benchmark ---------------------------------------------------------------
+add_executable(lob_benchmark bench/benchmark.cpp)
+target_link_libraries(lob_benchmark PRIVATE lob)
+target_compile_definitions(lob_benchmark PRIVATE LOB_BUILD_FLAGS="${CMAKE_CXX_FLAGS_RELEASE}")
+lob_warnings(lob_benchmark)
