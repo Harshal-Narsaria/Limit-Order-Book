@@ -1,0 +1,36 @@
+cmake_minimum_required(VERSION 3.20)
+project(limit_order_book LANGUAGES CXX)
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
+endif()
+
+# Benchmarks are reported at -O2 by default (CMake's Release default is -O3).
+# Turn on LOB_NATIVE to compare against -O3 -march=native.
+option(LOB_NATIVE "Build with -O3 -march=native" OFF)
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    if(LOB_NATIVE)
+        set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -DNDEBUG")
+    else()
+        set(CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG")
+    endif()
+endif()
+
+function(lob_warnings target)
+    if(MSVC)
+        target_compile_options(${target} PRIVATE /W4)
+    else()
+        target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic -Wshadow)
+    endif()
+endfunction()
+
+# --- Library -----------------------------------------------------------------
+add_library(lob
+    src/map_order_book.cpp
+)
+target_include_directories(lob PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+lob_warnings(lob)
